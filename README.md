@@ -175,3 +175,7 @@ Oyunda bir çok konuşma, müzik ve sesli anlatım şekli yer alıyor. Oynarken 
 
     var  speedGame = 5;
 default olarak tanımlanmış oyun hızı bu hızdır. Eğer oyun size yavaş geldiyse hızlandırabilirsiniz
+
+## Oynanış Linki
+[Bağıl Hafıza Oynanış Linki](https://youtu.be/R7RFFyBAXYE)
+

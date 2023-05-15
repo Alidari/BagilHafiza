@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+
+            background-color: rgba(10, 10, 10, 1);
+        }
+
+        canvas {
+            display: flex;
+            border: 1px solid #d3d3d3;
+            background-color: rgba(10, 10, 10, 1);
+            /* background-color: rgb(221, 51, 51);*/
+            margin-top: 20px;
+            padding: 0;
+            border: 0;
+        }
+    </style>
+</head>
+
+<body onload="startGame()">
+    <script>
+
+        //Oyunda kullanilacak global degiskenler
+        var roomFlag = 1;
+        var moveCount = 0;
+        var moveCountCar = 0;
+        var myGameArea
+        var moving = true;
+        var startScreen;
+        var startSound;
+        var canvasH = 634;
+        var canvasW = 1128;
+        var situation = "start";
+        var alphaSpeed = 0;
+        var speedGame = 5;
+        var postItFlag = false;
+        var postItPress = false;
+        var ilacFlag = false;
+        var ilacPress = false;
+        var ilacFrame;
+        var ringRing = false;
+        var phonePress = false;
+        var roomCount = 0;
+        var audioFinish = false;
+        var carPosition = "out";
+        var konusma2Time;
+        var konusma2Duration;
+        var konusma3Time;
+        var konusma3Duration;
+        var end = false;
+        var doorOpen = false;
+        var place = "yatakOdasi";
+        var endingTime = 0;
+        //Yan karakter gorsel
+        var samets = [
+            "./imgs/samet/1x/wait.png",
+            "./imgs/samet/1x/wait1.png",
+            "./imgs/samet/1x/speak.png",
+            "./imgs/samet/1x/withPhone.png",
+            "./imgs/samet/1x/withOutPhone.png",
+        ]
+        var sametCount = 0;
+
+        //Ana karakter gorsel
+        var charAnimationFilesRight = [
+            "./imgs/char1/1.png",
+            "./imgs/char1/2.png",
+            "./imgs/char1/3.png",
+            "./imgs/char1/4.png",
+            "./imgs/char1/5.png",
+            "./imgs/char1/6.png",
+            "./imgs/char1/7.png",
+            "./imgs/char1/8.png",
+            "./imgs/char1/9.png",
+            "./imgs/char1/10.png",
+            "./imgs/char1/11.png",
+            "./imgs/char1/12.png",
+            "./imgs/char1/13.png",
+            "./imgs/char1/14.png",
+            "./imgs/char1/15.png",
+            "./imgs/char1/16.png",
+            "./imgs/char1/17.png",
+            "./imgs/char1/18.png",
+            "./imgs/char1/19.png",
+            "./imgs/char1/20.png",
+            "./imgs/char1/21.png",
+            "./imgs/char1/22.png"]
+
+        var charAnimationFilesLeft = [
+            "./imgs/char3/1.png",
+            "./imgs/char3/2.png",
+            "./imgs/char3/3.png",
+            "./imgs/char3/4.png",
+            "./imgs/char3/5.png",
+            "./imgs/char3/6.png",
+            "./imgs/char3/7.png",
+            "./imgs/char3/8.png",
+            "./imgs/char3/9.png",
+            "./imgs/char3/10.png",
+            "./imgs/char3/11.png",
+            "./imgs/char3/12.png",
+            "./imgs/char3/13.png",
+            "./imgs/char3/14.png",
+            "./imgs/char3/15.png",
+            "./imgs/char3/16.png",
+            "./imgs/char3/17.png",
+            "./imgs/char3/18.png",
+            "./imgs/char3/19.png",
+            "./imgs/char3/20.png",
+            "./imgs/char3/21.png",
+            "./imgs/char3/22.png"]
+        //oda gorsel
+        var rooms = [
+            "./imgs/roomm/roomm.png",
+            "./imgs/roomm/roomm1.png",
+            "./imgs/roomm/roomm2.png",
+            "./imgs/roomm/roomm3.png",
+            "./imgs/roomm/roomm4.png",
+            "./imgs/roomm/roomm5.png",
+            "./imgs/roomm/roomm6.png"
+        ]
+        //arac gorsel
+        var cars = [
+            "imgs/car/1.png",
+            "imgs/car/2.png",
+            "imgs/car/3.png",
+            "imgs/car/4.png",
+            "imgs/car/5.png",
+            "imgs/car/6.png",
+            "imgs/car/7.png",
+            "imgs/car/8.png",
+        ]
+
+        function startGame() {
+
+            //baslangic ani
+            startScreen = new component(canvasW, canvasH, "./imgs/start.png", 0, 0, "background");
+            startText = new component(100, 100, "rgba(90, 90, 90 ", canvasW / 2, canvasH - 20);
+
+            //Menu elementleri
+            menu_playText = new component(20, 10, "rgba(150, 150, 150 ", 150, 120);
+            menu_HowText = new component(20, 10, "rgba(150, 150, 150 ", 188, 170);
+            menu_pointer = new component(15, 15, "./imgs/pointer.png", 90, 105, "background");
+            how_text = new component(20, 10, "rgba(221, 51, 51", canvasW / 2, 20);
+            //oyun ici elementler
+            whiteBlock = new component(canvasW, canvasH, "white", 0, 0);
+            mainCharStop = new component(485 / 2.5, 821 / 2.5, charAnimationFilesRight[0], 180, 210, "background");
+            samet = new component(121 * 1.1, 441 * 1.1, samets[sametCount], canvasW / 2, 0, "background");
+            mainRoom = new component(canvasW, canvasH, "./imgs/bedRoom.png", 0, 0, "background");
+            streetBank = new component(canvasW, canvasH, "./imgs/streetBank.png", 0, 0, "background");
+            car = new component(154 * 2.5, 71 * 2.5, cars[0], 255, 315, "background");
+            postIt = new component(canvasW, canvasH, "./imgs/postit.png", 0, 0, "background");
+            info = new component(30, 300, "rgba(190, 190, 190 ", canvasW / 2, canvasH - 20);
+            tip = new component(30, 300, "rgba(290, 290, 290 ", 150, 100);
+            phone = new component(canvasW * 2, canvasH, "./imgs/phone.png", 0, 0, "background");
+            endText = new component(20, 10, "rgba(150, 150, 150 ", canvasW / 2, 170);
+
+
+            myGameArea.start();
+
+
+            //SESLER
+            startSound = new sound("./sounds/start.mp3");
+            music = new sound("./sounds/music.mp3");
+            ilacSound = new sound("./sounds/ilac.mp3");
+            ringringSound = new sound("./sounds/ringring.mp3");
+            ringringOpenSound = new sound("./sounds/ringringOpen.mp3");
+            waking = new Audio("./sounds/uyanma.mp3");
+            ilac = new Audio("./sounds/ilacAlma.mp3");
+            notOkuma = new sound("./sounds/notOkuma.mp3");
+            konusma1 = new Audio("./sounds/konusma1.mp3");
+            konusma2 = new Audio("./sounds/konusma2.mp3");
+            polis = new sound("./sounds/polis.mp3");
+            konusma3 = new Audio("./sounds/konusma3.mp3");
+            ending = new Audio("./sounds/son.mp3");
+        }
+        //Oyun alanının olusturulmasi
+        myGameArea = {
+            //Document'de bir canvas elementi olusturma
+            canvas: document.createElement("canvas"),
+            start: function () {
+                this.canvas.width = canvasW;
+                this.canvas.height = canvasH;
+                this.context = this.canvas.getContext("2d");
+                this.frameNo = 0;
+                //Canvası en üste alma
+                document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+                this.interval = setInterval(updateGameArea, 20);
+            },
+            clear: function () {
+                this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            },
+            stop: function () {
+                clearInterval(this.interval);
+            }
+        }
+        //nesnelerin olusturuldugu fonksiyon
+        function component(width, height, color, x, y, type) {
+            this.type = type;
+            //resimler icin nesne
+            if (type == "background") {
+                this.image = new Image();
+                this.image.src = color;
+            }
+            //deger atamalari
+            this.width = width;
+            this.height = height;
+            this.speedX = 0;
+            this.speedY = 0;
+            this.color = color;
+            this.x = x;
+            this.y = y;
+            //Opaklik degerleri icin
+            var alpha = 0;
+            var alphaS;
+
+            //Nesneleri yaratma
+            this.update = function () {
+                ctx = myGameArea.context;
+                if (type == "background") {
+                    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                }
+                else {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+
+            }
+            //Yazilari yaratma fonksiyonu
+            this.updateText = function (text) {
+                if (situation == "start") {
+                    //Baslangictaki yazinin yanip sönme efekti
+                    if (alpha <= 0) {
+                        alpha += 0.01;
+                        alphaS = 1;
+                    }
+                    else if (alpha >= 1.3) {
+                        alpha -= 0.01;
+                        alphaS = -1;
+                    }
+                    else if (alphaS == 1) {
+                        alpha += 0.01;
+                        alphaS = 1;
+                    }
+                    else if (alphaS == -1) {
+                        alpha -= 0.01;
+                        alphaS = -1;
+                    }
+                    ctx = myGameArea.context;
+                    ctx.font = "30px Arial Rounded MT";
+                    ctx.fillStyle = color + "," + alpha + ")";
+                }
+
+                //diger yazi ayarlari
+                else if (situation == "menu" || situation == "howPlay") {
+                    alpha = 1;
+                    ctx = myGameArea.context;
+                    ctx.font = this.width + "px Arial Rounded MT";
+                    ctx.fillStyle = color + "," + alpha + ")";
+                }
+                else if (situation == "playGame") {
+                    alpha = 1;
+                    ctx = myGameArea.context;
+                    ctx.font = this.width + "px Agency FB";
+                    ctx.fillStyle = color + "," + alpha + ")";
+                }
+
+                //yaziyi satirlara ayirma islemi
+                if (situation == "howPlay") {
+                    var lines = text.split("\n");
+                    console.log(lines);
+                    for (var i = 0; i < lines.length; i++) {
+                        ctx.fillText(lines[i], this.x, this.y + (i * 35));
+                    }
+
+                }
+                else {
+                    ctx.fillText(text, this.x, this.y);
+                }
+                ctx.textAlign = "center";
+            }//konum bilgisi güncelleme
+            this.newPos = function () {
+                this.x += this.speedX;
+                this.y += this.speedY;
+            }
+            /*    this.crash = function (othObj) {
+                  var left = this.x;
+                  var right = left + (this.width)
+  
+                  var top = this.y;
+                  var bottom = top + (this.height);
+  
+                  var otherLeft = othObj.x;
+                  var otherRight = otherLeft + (othObj.width);
+                  var otherTop = othObj.y;
+                  var otherBottom = otherTop + (othObj.height)
+  
+                  var crash = true;
+  
+                  if (bottom < otherTop || top > otherBottom || left > otherRight || right < otherLeft) {
+                      crash = false;
+                      console.log("Dışarda");
+                  } else { console.log("İçerde"); }
+                  return crash;
+  
+              }*/
+        }
+        //Oyun alaninin güncellenmesi
+        function updateGameArea() {
+            myGameArea.clear();
+
+
+            //Menü ekranı ve baslangic ekranlarının goruntulenme asamasi
+            if (situation == "start" || situation == "menu" || situation == "howPlay") {
+                startSound.setVolume(0.5);
+                startSound.play();
+                startScreen.update();
+                if (situation == "start") {
+                    startText.updateText("Bir Tusa Basiniz");
+                }
+
+                //Goruntunun opakligiyla oynama
+                ctx.globalAlpha -= alphaSpeed;
+                if (ctx.globalAlpha <= 0.05) {
+                    situation = "waking";
+                    //situationlar oyunun asamalarini gosteriyor
+
+                }
+
+
+                //menu asamasi
+                if (situation == "menu") {
+                    menu_playText.updateText("Basla");
+                    menu_HowText.updateText("Nasıl Oynanır");
+                    menu_pointer.update();
+                }
+                if (situation == "howPlay") {
+                    how_text.updateText("Oyunumuz, her gün hafızasını kaybeden bir karakterin karısının katilini bulup \n \
+                    ondan intikam almasını anlatıyor \n \
+                    \n \
+                    \n \
+                    Oyunda, hareket etme \"A\" ve \"D\" tusları ile sağlanıyor. \n \
+                    Esyalarla etkilesime girme tuşu ise \"E\". \n \
+                    Arabadan inme tusu \"Q\". \n \
+                    Herhangi bir etkilesimden çıkmak için \"ESC\" tusunu kullanabilirsiniz.\n \
+                    Bunları bildiğiniz takdirde önemli olan hikayeye ayak uydurmak.\n \
+                    \n \
+                    \n \
+                    \n \
+                    ÖNEMLİ NOT:OYUNDA HİKAYENİN BAZI KISIMLARI SESLİ SEKİLDE ANLATILMAKTA \n \
+                    OYUNU OYNARKEN TARAYICINIZIN VE BİLGİSAYARINIZIN SESİNİ AÇMANIZ ÖNERİLİR.\n \
+                    \n \
+                    İyi oyunlar\n \
+                    \n \
+                    ESC ile menüye dön\n");
+
+
+                }
+            }
+            //karakterin uyanma asamasi
+            if (situation == "waking") {
+                startSound.stop();
+                //ses bittiginde oyun basliyor
+                waking.addEventListener('ended', function () {
+                    audioFinish = true;
+                });
+
+                if (!audioFinish) {
+                    waking.play();
+                }
+                else if (audioFinish) {
+
+                    whiteBlock.update();
+                    audioFinish = false;
+                    situation = "playGame";
+                }
+
+            }
+
+            //OYUN ALANI-------------------------------------------------------
+
+
+
+            else if (situation == "playGame") {
+                startSound.stop();
+                //YATAK ODASİ (BASLANGİC)----------------
+                if (place == "yatakOdasi") {
+                    mainCharStop.y = 210;
+
+                    //Ilk konusma ani
+                    ilac.addEventListener('ended', function () {
+                        audioFinish = true;
+                    });
+                    if (audioFinish == false) {
+                        ilac.play();
+                        //Bir eylem varken hareketi kısıtlıyor
+                        moving = false;
+                    }
+                    else {
+                        moving = true;
+                        if (end == true)//Oyunun sonunda tekrar aynı mekana donuldugunde farklı olaylar gerceklesiyor
+                        {
+                            polis.play();
+                        }
+                    }
+
+                }
+                if (ctx.globalAlpha != 1) {
+                    ctx.globalAlpha += alphaSpeed;
+                }
+
+                //ortam
+                mainRoom.update();
+
+                //araba disi hareket
+                if (carPosition == "out") {
+                    if (moving == true) {
+                        mainCharStop.newPos();
+                    }
+
+                    mainCharStop.update();
+                }
+                if (moving == true) {
+
+
+                    //Karakterin animasyonlu bir sekilde yürümesi
+                    if (mainCharStop.speedX > 0) {
+                        if (moveCount >= charAnimationFilesRight.length) {
+                            moveCount = 0;
+                        }
+                        mainCharStop.image.src = charAnimationFilesRight[moveCount];
+                        if (myGameArea.frameNo % 3 == 0) {
+                            moveCount++;
+                        }
+                    }
+                    if (mainCharStop.speedX < 0) {
+                        if (moveCount >= charAnimationFilesLeft.length) {
+                            moveCount = 0;
+                        }
+                        mainCharStop.image.src = charAnimationFilesLeft[moveCount];
+                        if (myGameArea.frameNo % 3 == 0) {
+                            moveCount++;
+                        }
+                    }
+                }
+
+
+                //YATAK ODASİ (DEVAM)
+                if (place == "yatakOdasi") {
+                    //Baska odaya gecis
+                    if (mainCharStop.x < 0) {
+                        if (end == false) {
+                            if (roomFlag == 1) {
+                                roomFlag++;
+                            }
+
+                            mainRoom.image.src = "./imgs/bathh.png";
+                            mainCharStop.x = canvasW - 10;
+                            place = "bath";
+                        }
+                        else {//Oyun sonu eylem
+                            info.updateText("Kapıyı açmam gerek");
+                            mainCharStop.x = 0;
+                        }
+                    }
+                    //Ilk görev olan ilacları almadan baska bir odaya gecis yapilmamasi icin
+                    if ((mainCharStop.x >= canvasW - 200 && place == "yatakOdasi" && ilacPress == false) || (mainCharStop.x >= canvasW && place == "yatakOdasi" && roomFlag > 1 && ilacPress == true)) {
+                        console.log("ilac durum:" + ilacFlag);
+                        if (roomFlag >= 2 && ilacPress == true) {
+                            if (end == false) {
+                                audioFinish = false;
+                            }
+                            mainRoom.image.src = "./imgs/roomm.png";
+                            mainCharStop.x = 0 + 10;
+                            place = "salon"
+                        }
+                        else {
+                            info.updateText("Önce banyodan ilaclarimi almalıyım");
+                            mainCharStop.x = canvasW - 200;
+                        }
+
+                    }
+                }
+
+                //BANYO-----------
+                if (place == "bath") {
+                    //Oda gecisi
+                    if (mainCharStop.x > canvasW - 5) {
+                        mainRoom.image.src = "./imgs/bedRoom.png";
+                        mainCharStop.x = 0 + 10;
+                        place = "yatakOdasi"
+                    }
+                    //Duvar etkisi
+                    if (mainCharStop.x <= 548 && place == "bath") {
+                        mainCharStop.x = 548;
+                    }
+
+                    //Notu okuma
+                    if (mainCharStop.x <= 948 && mainCharStop.x >= 848 && postItFlag == false) {
+                        if (postItPress == true) {
+                            postIt.update();
+                            info.updateText("\'ESC\ ile geri dön'");
+                            notOkuma.play();
+                        }
+                        else {
+                            info.updateText("\'E\' tuşu ile notu oku");
+                        }
+
+                    }
+                    //İlac icme eylemi
+                    if (mainCharStop.x <= 638 && mainCharStop.x >= 590 && ilacFlag == false) {
+                        if (ilacPress == true && (myGameArea.frameNo - ilacFrame) < 75) {
+                            mainRoom.image.src = "./imgs/bathhAfter.png";
+                            info.updateText("Biraz da olsa iyi gelir");
+                            ilacSound.setVolume(0.2);
+                            ilacSound.play();
+
+                        }
+                        else if (ilacPress == false) {
+                            info.updateText("\'E\' tuşu ile ilacini ic");
+                        }
+
+                    }
+
+
+                }//2.gorev telefonu acma gorevi
+                if (myGameArea.frameNo - ilacFrame > 85 && myGameArea.frameNo - ilacFrame < 130 && end == false) {
+                    info.updateText("(Telefon çalar)");
+                    ringRing = true;
+                }
+                //Telefon çalış ses uzaklık ayarı(Yakinlastikca ses artiyor)
+                if (ringRing == true) {
+                    if (place == "bath") {
+                        var vol = 1 / ((canvasW + 505 + (canvasW - mainCharStop.x)) / 20);
+                        ringringSound.setVolume(vol);
+                    }
+                    else if (place == "yatakOdasi") {
+                        var vol = 1 / ((505 + (canvasW - mainCharStop.x)) / 20);
+                        ringringSound.setVolume(vol);
+                    }
+                    else if (place == "salon") {
+                        if (mainCharStop.x >= 505 && mainCharStop.x <= 540) {
+                            var vol = 0.7;
+                        }
+                        else {
+                            var vol = 0.3;
+                        }
+                        ringringSound.setVolume(vol);
+                    }
+                    ringringSound.play();
+                }
+
+                if (place == "salon") {//SALON
+                    //Telefonun konumuna göre telefonu acma
+                    if (ringRing == true && end == false) {
+                        if (mainCharStop.x >= 485 && mainCharStop.x <= 625) {
+                            info.updateText("Telefonu Ac");
+                        }
+
+                        //Telefon calis animasyonu
+                        if (roomCount >= rooms.length) {
+                            roomCount = 0;
+                        }
+                        mainRoom.image.src = rooms[roomCount];
+                        if (myGameArea.frameNo % 3 == 0) {
+                            roomCount += 1;
+                        }
+                    }
+                    //oda degisimi
+                    if (mainCharStop.x < 0 - 10) {
+                        if (end == false) {
+                            mainRoom.image.src = "./imgs/bedRoom.png";
+                            mainCharStop.x = canvasW - 10;
+                            place = "yatakOdasi";
+                        }
+                        else {//gorev varken oda degisimi izni yok
+                            mainCharStop.x = 0 - 10;
+                            info.updateText("Kapıyı açmam gerek");
+                        }
+                    }
+
+                    //Disari cikma
+                    if (mainCharStop.x >= canvasW - 200 && place == "salon" && end == false) {
+                        if (ringRing == false && phonePress == true) {
+
+                            mainRoom.image.src = "./imgs/street.png"
+                            mainCharStop.x = 10;
+                            place = "street";
+                        }
+                        else if (end == false) {
+                            mainCharStop.x = canvasW - 200;
+                            info.updateText("Önce telefonu acmam gerek");
+                        }
+                    }
+                    //Son gorevdeki kapi acma eylemi
+                    if (end == true && mainCharStop.x >= canvasW - 200 && place == "salon") {
+                        mainCharStop.x = canvasW - 200;
+                        if (doorOpen == false) {//Kapi acilmamissa
+                            info.updateText("Kapıyı Ac");
+                        }
+                        else {
+                            polis.stop();
+                            konusma3.addEventListener("timeupdate", function () {
+                                konusma3Time = konusma3.currentTime;
+                                konusma3Duration = konusma3.duration;
+                            })
+                            if (konusma3Time >= 12) {//konusmanin 12.saniyesinden sonra olmasi gereken durum
+                                situation = "ending";
+                            }
+                            konusma3.play();
+                            moving = false;
+                        }
+                    }
+                    //Telefonla konusulan süre boyunca hareket kisitlamasi
+                    if (phonePress == true && ringRing == true) {
+                        ringringOpenSound.play();
+                        ringringSound.stop();
+                        konusma1.addEventListener("ended", function () {
+                            audioFinish = true;
+                        })
+                        if (audioFinish == false) {
+                            konusma1.play();
+                            moving = false;
+                        }
+                        ringRing = false;
+
+                    }
+                    if (audioFinish == true) {
+                        moving = true;
+                        audioFinish = false;
+                    }
+                }
+                //SOKAK-------------
+
+                if (place == "street") {
+
+                    //Konum ve boyut ayarlamari 
+                    mainCharStop.width = 485 / 4.5;
+                    mainCharStop.height = 821 / 4.5;
+                    mainCharStop.y = 255;
+                    mainRoom.width = canvasW * 2;
+
+                    //Arabadayken sokak ilerlemesinin siniri
+                    if (mainRoom.x >= -canvasW) {
+                        mainRoom.newPos();
+                    }
+                    mainRoom.update();
+                    //Duvar etkisi
+                    if (mainCharStop.x < 10) {
+                        mainCharStop.x = 10
+                    }
+
+                    else if (mainCharStop.x > canvasW - 100) {//Duvar etkisi
+                        if (mainRoom.x >= -canvasW) {
+                            mainCharStop.x = canvasW - 100;
+                        }
+                        else {//Parka gecis
+                            mainRoom.image.src = "./imgs/park.jpg";
+                            mainCharStop.x = 10;
+                            place = "park";
+                        }
+                    }//Arabaya binme komutu
+                    if (mainCharStop.x >= 265 && mainCharStop.x <= 460 && carPosition == "out") {
+                        info.updateText("Arabaya Bin");
+                    }
+                    //Araba icinde eylemler
+                    if (carPosition == "in") {
+                        tip.updateText("İpucu: Arabadan inme tusu :\'Q\'");
+                        car.newPos();
+                    }
+
+                    //Araba siniri
+                    if (car.x <= 0) {
+                        car.x = 0;
+                    }
+
+                    //Araba siniri
+                    else if (car.x >= canvasW - 400) {
+                        car.x = canvasW - 400;
+                    }
+                    //
+                    //Gorev
+                    else if (!(mainRoom.x >= -canvasW) && carPosition == "in") {
+                        info.updateText("Park et ve arabadan in");
+                    }
+                    //Arabadan inersen gelen uyari
+                    if (carPosition == "out") {
+                        mainCharStop.update();
+                        if (mainRoom.x >= -canvasW)
+                            info.updateText("Arabaya Bin");
+                    }
+
+
+                    //Araba animasyonu
+                    if (car.speedX > 0) {
+                        if (moveCountCar >= cars.length) {
+                            moveCountCar = 0;
+                        }
+                        car.image.src = cars[moveCountCar];
+
+                        moveCountCar++;
+
+                    }
+                    if (car.speedX < 0) {
+                        if (moveCountCar < 0) {
+                            moveCountCar = cars.length - 1;
+                        }
+                        car.image.src = cars[moveCountCar];
+                        moveCountCar--;
+                    }
+
+                    car.update();
+                }
+
+
+                //PARK
+                if (place == "park") {
+
+                    //Konum ve boyut ayarlari
+                    mainRoom.x = 0;
+                    mainRoom.width = canvasW;
+                    mainRoom.height = canvasH;
+                    mainCharStop.width = 485 / 2.5;
+                    mainCharStop.height = 821 / 2.5;
+                    mainCharStop.y = 280;
+                    //Yan karakter ayarlari
+                    samet.y = 610 - samet.height;
+                    samet.update();
+
+
+
+                    //Karakterlerin konusma ani
+                    if (mainCharStop.x >= 350) {
+                        moving = false;
+                        samet.image.src = samets[1];
+
+                        //konusma süresine göre degisimler
+                        konusma2.addEventListener("timeupdate", function () {
+                            konusma2Time = konusma2.currentTime;
+                            konusma2Duration = konusma2.duration;
+                        })
+
+                        if (konusma2Time >= 5 && konusma2Time < 6) {
+                            samet.image.src = "./imgs/samet/1x/withPhone.png";
+
+                        }
+                        else if (konusma2Time >= 6 && konusma2Time < 8) {
+                            samet.image.src = "./imgs/samet/1x/withoutPhone.png";
+
+                            phone.update();
+                        }
+                        else if (konusma2Time >= 8 && konusma2Time < 15) {
+                            //telefon gelme ani
+                            phone.update();
+                        }
+                        else if (konusma2Time >= 15) {
+                            situation = "patlama";
+                        }
+
+                        konusma2.play();
+
+                    }
+
+
+
+                }
+
+
+            }//silah sesi sonrasi son gorev
+            if (situation == "patlama") {
+                end = true;
+                ctx.globalAlpha = 0;
+                situation = "waking";
+                mainRoom.image.src = "./imgs/bedRoom.png";
+                place = "yatakOdasi";//basa alma
+            }
+            if (situation == "ending") {//Son olaylar
+
+                ending.addEventListener("timeupdate", function () {
+                    endingTime = ending.currentTime;
+                })
+                if (endingTime <= 38) {
+                    ending.play();
+                } else {
+                    endText.updateText("\'BAGIL HAFIZA\' oynadiginiz icin tesekkurler");
+                }
+            }
+            myGameArea.frameNo += 1;
+
+        }
+
+        //---------------------------------------------------------------------------------
+
+
+        //KLAVYE AYARLARİ|KOMUTLARI DINLEME|DEGİSKENLERI ONA GORE DEGISTIRME|
+        document.addEventListener("keydown", function (event) {
+
+            console.log("keyCode = " + event.keyCode);//Uygun keykodlari bulmak icin
+            if (situation == "start") {
+                situation = "menu";
+            }
+            else if (situation == "menu") {//Menu secimleri 
+                if (event.keyCode == 40) {
+                    menu_pointer.y = 155;
+                }
+                if (event.keyCode == 38) {
+                    menu_pointer.y = 105;
+                }
+                if (menu_pointer.y == 105 && event.keyCode == 13) {
+                    alphaSpeed = 0.01;
+                    startSound.stop();
+                }
+                if (menu_pointer.y == 155 && event.keyCode == 13) {
+                    situation = "howPlay";
+                }
+            }
+            else if (situation == "howPlay") {//Nasil oynanir yeri
+                if (event.keyCode == 27) {
+                    situation = "menu";
+                }
+            }
+            else if (situation == "playGame") {
+                if (carPosition == "out") {
+                    //Karakter hareketi
+                    if (mainCharStop.speedX == 0) {
+                        if (event.keyCode == 65) {
+                            mainCharStop.speedX -= speedGame;
+                            moveCount = 0;
+                        }
+                        if (event.keyCode == 68) {
+                            mainCharStop.speedX += speedGame;
+                            moveCount = 0;
+                            if (carPosition == "in") {
+                                mainRoom.speedX -= speedGame / 2;
+                            }
+                        }
+                    }
+                }//Araba hareketi
+                if (carPosition == "in") {
+                    if (car.speedX == 0) {
+                        if (event.keyCode == 65) {
+                            car.speedX -= speedGame / 3;
+                            moveCountCar = 0;
+                        }
+                        if (event.keyCode == 68) {
+                            car.speedX += speedGame / 4;
+                            moveCountCar = 0;
+                            if (carPosition == "in") {
+                                mainRoom.speedX -= speedGame / 2;
+                            }
+                        }
+                    }
+                }
+                //NOT OKUMA
+                if (mainCharStop.x <= 948 && mainCharStop.x >= 848 && postItFlag == false && place == "bath") {
+
+                    if (event.keyCode == 69) {//"E" tuşu
+                        postItPress = true;
+                    }
+                    else if (event.keyCode == 27) {//ESC
+                        postItFlag = true;
+                    }
+
+                }
+                //ILAC ICME
+                if (mainCharStop.x <= 638 && mainCharStop.x >= 590 && ilacFlag == false && place == "bath") {
+
+                    if (event.keyCode == 69 && ilacPress == false) {//"E" tuşu
+                        ilacPress = true;
+                        ilacFrame = myGameArea.frameNo;
+                    }
+
+                }//Telefon cevaplama
+                if (mainCharStop.x >= 485 && mainCharStop.x <= 625 && ringRing == true && place == "salon") {
+                    if (event.keyCode == 69 && phonePress == false) {//"E" tuşu
+                        phonePress = true;
+                    }
+                }
+                if (place == "street") {
+                    //Arabaya binme
+                    if (mainCharStop.x >= car.x && mainCharStop.x <= car.x + 400) {
+                        if (event.keyCode == 69 && carPosition == "out") {
+                            carPosition = "in";
+                        }
+                    }//Arabadan inme
+                    if (carPosition == "in" && event.keyCode == 81) {
+                        carPosition = "out";
+                    }
+                }//Polise kapiyi acma
+                if (end == true && place == "salon" && mainCharStop.x >= canvasW - 200 && event.keyCode == 69) {
+                    doorOpen = true;
+                }
+
+
+            }
+        })
+        //Hizlari ve konumlari sifirlama
+        document.addEventListener("keyup", function (event) {
+            if (event.keyCode == 65) {
+                mainCharStop.speedX = 0;
+                mainCharStop.image.src = charAnimationFilesLeft[0];
+                mainRoom.speedX = 0
+                car.speedX = 0;
+                car.image.src = cars[0];
+            }
+            if (event.keyCode == 68) {
+                mainCharStop.speedX = 0;
+                mainCharStop.image.src = charAnimationFilesRight[0];
+                mainRoom.speedX = 0;
+                car.speedX = 0;
+                car.image.src = cars[0];
+            }
+
+        })
+
+        //Ses fonksiyonu
+        function sound(src) {
+            this.sound = document.createElement("audio");
+            this.sound.src = src;
+            this.sound.setAttribute("preload", "auto");
+            this.sound.setAttribute("controls", "none");
+            this.sound.style.display = "none";
+            document.body.appendChild(this.sound);
+            this.play = function () {
+                this.sound.play();
+            }
+            this.stop = function () {
+                this.sound.pause();
+            }
+            this.setVolume = function (volume) {
+                this.sound.volume = volume;
+            }
+        }
+
+        /*document.addEventListener("mousemove", function (event) {
+            var x = event.clientX;
+            var y = event.clientY;
+            console.log("Mouse position: " + x + ", " + y);
+        });*/
+
+    </script>
+
+</body>
+
+</html>
